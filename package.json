@@ -1,5 +1,5 @@
 {
-  "name": "db",
+  "name": "db-framework",
   "version": "1.0.0",
   "description": "Database framework",
   "main": "index.js",
