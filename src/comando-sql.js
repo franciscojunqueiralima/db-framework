@@ -7,9 +7,25 @@ class ComandoSql {
         this.parametros = [];
     }
 
+    adicionarFiltros(filtros) {
+        if (_.isArray(filtros)) {
+            filtros.forEach((filtro) => {
+                this.adicionarParametro(filtro.valor);
+            });
+        };  
+    }
+
+    adicionarParametro(parametro) {
+        this.parametros.push(parametro);
+    }
+
+    executar() {
+        return db.executarComandoSql(this);
+    }
+
     montarQuery(query, filtros) {        
-        var clausulas = "";
-        var count = 0;
+        let clausulas = "";
+        let count = 0;
 
         if (_.isArray(filtros)) {
             filtros.forEach((filtro) => {
@@ -26,20 +42,16 @@ class ComandoSql {
 
         this.query = query.replace("$filtros", clausulas);
     }
+    
+    tratarParametrosPg() {
+        let count = 0;
 
-    adicionarParametro(parametro) {
-        this.parametros.push(parametro);
-    }
-
-    adicionarFiltros(filtros) {
-        if (_.isArray(filtros))
-        filtros.forEach((filtro) => {
-            this.adicionarParametro(filtro.valor);
+        this.query = this.query.replace(/\?/g, () => {
+            count++;
+            return `$${count}`;
         });
-    }    
 
-    executar() {
-        return db.executarComandoSql(this);
+        return;
     }
 }
 

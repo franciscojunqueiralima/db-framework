@@ -10,7 +10,7 @@ class Dao {
         if (_.isArray(comandoSql)) {
             comandoSql.forEach((comando) => {
                 this.comandosSql.push(comando);
-            })
+            });
         } else if (_.isObject(comandoSql)) {
             this.comandosSql.push(comandoSql);
         }

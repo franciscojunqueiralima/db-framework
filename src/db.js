@@ -10,6 +10,8 @@ const pool = new Pool({
 
 const executarComandoSql = async (comandoSql) => {
     try {
+        comandoSql.tratarParametrosPg();
+
         const { rows } = await pool.query(comandoSql.query, comandoSql.parametros);
         return rows;
     } catch (err) {        
@@ -25,6 +27,8 @@ const executarComandosSql = async (dao) => {
         await client.query('BEGIN');
         
         for await (const comandoSql of dao.comandosSql) {
+            comandoSql.tratarParametrosPg();
+
             const { rows } = await client.query(comandoSql.query, comandoSql.parametros);
             results.push(rows);                            
         }        
