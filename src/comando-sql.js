@@ -1,6 +1,8 @@
 const _ = require("lodash");
 const db = require("./db");
 
+
+
 class ComandoSql {
     constructor() {
         this.query = "";
@@ -19,7 +21,7 @@ class ComandoSql {
         this.parametros.push(parametro);
     }
 
-    encontrarUm = async() => {
+    async encontrarUm() {
         const results = await this.executar();
         return results[0];
     };    
