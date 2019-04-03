@@ -19,9 +19,14 @@ class ComandoSql {
         this.parametros.push(parametro);
     }
 
+    encontrarUm = async() => {
+        const results = await this.executar();
+        return results[0];
+    };    
+
     executar() {
         return db.executarComandoSql(this);
-    }
+    }    
 
     montarQuery(query, filtros) {        
         let clausulas = "";

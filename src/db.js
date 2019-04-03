@@ -8,13 +8,19 @@ const pool = new Pool({
     port: process.env.DB_PORT
 });
 
-const executarComandoSql = async (comandoSql) => {
-    try {
+const executarComandoSql = async (comandoSql) => {    
+    try {        
         comandoSql.tratarParametrosPg();
 
-        const { rows } = await pool.query(comandoSql.query, comandoSql.parametros);
-        return rows;
-    } catch (err) {        
+        const { command, rows } = await pool.query(comandoSql.query, comandoSql.parametros);
+        if (command === "SELECT") {
+            return rows;
+        } else {
+            return [];
+        }
+
+        return results;
+    } catch (err) {
         throw err;
     }    
 };
@@ -29,8 +35,10 @@ const executarComandosSql = async (dao) => {
         for await (const comandoSql of dao.comandosSql) {
             comandoSql.tratarParametrosPg();
 
-            const { rows } = await client.query(comandoSql.query, comandoSql.parametros);
-            results.push(rows);                            
+            const { command, rows } = await client.query(comandoSql.query, comandoSql.parametros);            
+            if (command === "SELECT") {
+                results.push(rows);
+            }            
         }        
         
         await client.query('COMMIT');        
