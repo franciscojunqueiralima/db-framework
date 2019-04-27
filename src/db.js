@@ -4,7 +4,7 @@ const adodb = require("./ado/index.js");
 // config
 const dbEngine = process.env.DB_ENGINE;
 let poolPg;
-let connAdo;
+let clientAdo;
 
 switch (dbEngine) {
     case "pg":
@@ -17,7 +17,7 @@ switch (dbEngine) {
         });
         break;
     case "ado":
-        connAdo = adodb.open(`Provider=Microsoft.Jet.OLEDB.4.0;Data Source=${process.env.DB_NAME};Jet OLEDB:Database Password=${process.env.DB_PASSWORD};`);
+        clientAdo = adodb.open(`Provider=Microsoft.Jet.OLEDB.4.0;Data Source=${process.env.DB_NAME};Jet OLEDB:Database Password=${process.env.DB_PASSWORD};`);
         break;    
 }
 
@@ -32,7 +32,7 @@ const query = async (comandoSql) => {
 
             case "ado":
                 comandoSql.tratarParametrosAdo();
-                let data = await connAdo.query(comandoSql.query);
+                let data = await clientAdo.query(comandoSql.query);
                 return data;
         }
     } catch (err) {
@@ -41,31 +41,43 @@ const query = async (comandoSql) => {
 };
 
 // execute
-const execute = async (dao) => {    
-    if (dbEngine === "pg") {
-        const results = [];
-        const client = await poolPg.connect();
+const execute = async (dao) => {        
+    switch (dbEngine) {
+        case "pg":
+            const clientPg = await poolPg.connect();
 
-        try {                                
-            await client.query('BEGIN');
-            
-            for await (const comandoSql of dao.comandosSql) {
-                comandoSql.tratarParametrosPg();
+            try {
+                await clientPg.query('BEGIN');
 
-                const { rows } = await client.query(comandoSql.query, comandoSql.parametros);            
-                results.push(rows);
-            }        
-            
-            await client.query('COMMIT');        
-
-            return results;
-        } catch (err) {
-            await client.query('ROLLBACK');
-            throw err;
-        } finally {        
-            client.release();          
-        }
-    }
+                for await (let comandoSql of dao.comandosSql) {
+                    comandoSql.tratarParametrosPg();
+                    await clientPg.query(comandoSql.query, comandoSql.parametros);                                
+                }        
+                
+                await clientPg.query('COMMIT');
+                return;
+            } catch (err) {
+                await clientPg.query('ROLLBACK');
+                throw err;
+            } finally {        
+                clientPg.release();          
+            }
+                        
+        case "ado":            
+            try {           
+                const sqls = [];
+                
+                for (let comandoSql of dao.comandosSql) {
+                    comandoSql.tratarParametrosAdo();                    
+                    sqls.push(comandoSql.query);
+                }
+                                
+                await clientAdo.executeTrans(sqls);
+                return;
+            } catch (err) {                
+                throw err;
+            }
+    }            
 };
 
 module.exports = {    

@@ -1,5 +1,9 @@
 const _ = require("lodash");
+const moment = require("moment");
+
 const db = require("./db");
+
+const dbEngine = process.env.DB_ENGINE;
 
 class ComandoSql {
     constructor() {
@@ -28,14 +32,53 @@ class ComandoSql {
     }
 
     adicionarParametro(parametro) {
+        if (_.isDate(parametro)) {
+            throw new Error("Favor utilizar as funções específicas de data para parametros do tipo data");
+        }
+
         this.parametros.push(parametro);
+    }
+    
+    adicionarParametroDataPorFormato(parametro, formato) {
+        if (parametro === null) {
+            return this.parametros.push(parametro);
+        } 
+                
+        if (!_.isDate(parametro)) {
+            throw new Error(`O parametro ${parametro} não é uma data válida`);
+        } 
+
+        let dataHoraFormatada = moment(parametro).format(formato);
+        switch (dbEngine) {
+            case "pg":
+                if (formato === "HH:mm:ss") {
+                    return this.parametros.push(dataHoraFormatada);
+                } else {
+                    return this.parametros.push(parametro);
+                }                
+            
+            case "ado":                                
+                return this.parametros.push(`#${dataHoraFormatada}#`);
+        }
+    }
+
+    adicionarParametroData(parametro) {        
+        this.adicionarParametroDataPorFormato(parametro, "YYYY-MM-DD");
+    }
+
+    adicionarParametroHorario(parametro) {
+        this.adicionarParametroDataPorFormato(parametro, "HH:mm:ss");
+    }
+
+    adicionarParametroDataHora(parametro) {
+        this.adicionarParametroDataPorFormato(parametro, "YYYY-MM-DD HH:mm:ss");
     }
 
     adicionarFiltros(filtros) {
         if (_.isArray(filtros)) {
-            filtros.forEach((filtro) => {
+            for (let filtro of filtros) {
                 this.adicionarParametro(filtro.valor);
-            });
+            };
         };  
     }    
 
@@ -51,10 +94,17 @@ class ComandoSql {
     tratarParametrosAdo() {
         for (let parametro of this.parametros) {
             if (_.isString(parametro)) {
-                this.query = this.query.replace("?", `'${parametro}'`);
-                console.log(this.query);
+                if (parametro.startsWith("#")) {
+                    this.query = this.query.replace("?", parametro);
+                } else {
+                    this.query = this.query.replace("?", `'${parametro}'`);
+                }
+            } else if (_.isNumber(parametro)) {
+                this.query = this.query.replace("?", parametro);
+            } else if (_.isNull(parametro)) {
+                this.query = this.query.replace("?", "null");
             }
-        }
+        }        
     }
 
     executarQuery() {

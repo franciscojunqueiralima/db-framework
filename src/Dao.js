@@ -1,4 +1,5 @@
 const _ = require("lodash");
+
 const db = require("./db");
 
 class Dao {
@@ -8,16 +9,16 @@ class Dao {
 
     adicionar(comandoSql) {        
         if (_.isArray(comandoSql)) {
-            comandoSql.forEach((comando) => {
+            for (let comando of comandoSql) {
                 this.comandosSql.push(comando);
-            });
+            }
         } else if (_.isObject(comandoSql)) {
             this.comandosSql.push(comandoSql);
         }
     }
 
     executar() {
-        return db.executarComandosSql(this);
+        return db.execute(this);
     }
 }
 

@@ -444,7 +444,7 @@
         execute: function(params) {
             var recordset;
             var result = [];
-            var scalarMode = !!n.scalar;
+            var scalarMode = !!params.scalar;
             var connection = new ActiveXObject("ADODB.Connection");
 
             if (scalarMode) {
@@ -472,7 +472,7 @@
         executeTrans: function(params) {
             var recordset;
             var result = [];
-            var scalarMode = !!n.scalar;
+            var scalarMode = !!params.scalar;
             var connection = new ActiveXObject("ADODB.Connection");
 
             if (scalarMode) {
