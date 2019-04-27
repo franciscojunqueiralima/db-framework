@@ -1,11 +1,11 @@
-const comandoSql = require("./src/comando-sql");
-const dao = require("./src/dao");
-const db = require("./src/db");
-const filtro = require("./src/filtro");
+const ComandoSql = require("./src/ComandoSql.js");
+const Filtro = require("./src/Filtro.js");
+const Dao = require("./src/Dao.js");
+const db = require("./src/db.js");
 
 module.exports = { 
-    ...comandoSql, 
-    ...dao,
+    ComandoSql, 
+    Filtro,
+    Dao,
     ...db,
-    ...filtro
 };

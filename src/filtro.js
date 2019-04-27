@@ -7,6 +7,4 @@ class Filtro {
     }    
 }
 
-module.exports = {
-    Filtro
-}
+module.exports = Filtro;

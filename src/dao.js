@@ -21,6 +21,4 @@ class Dao {
     }
 }
 
-module.exports = {
-    Dao
-}
+module.exports = Dao;
