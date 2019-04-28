@@ -1,7 +1,6 @@
 const { Pool } = require("pg");
 const adodb = require("./ado/index.js");
 
-// config
 const dbEngine = process.env.DB_ENGINE;
 let poolPg;
 let clientAdo;
@@ -21,18 +20,17 @@ switch (dbEngine) {
         break;    
 }
 
-// query
-const query = async (comandoSql) => {
+const query = async (sqlCommand) => {
     try {        
         switch (dbEngine) {
             case "pg":
-                comandoSql.tratarParametrosPg();
-                let { rows } = await poolPg.query(comandoSql.query, comandoSql.parametros);
+                sqlCommand.handlePgParameters();
+                let { rows } = await poolPg.query(sqlCommand.query, sqlCommand.parameters);
                 return rows;
 
             case "ado":
-                comandoSql.tratarParametrosAdo();
-                let data = await clientAdo.query(comandoSql.query);
+                sqlCommand.handleAdoParameters();
+                let data = await clientAdo.query(sqlCommand.query);
                 return data;
         }
     } catch (err) {
@@ -41,7 +39,7 @@ const query = async (comandoSql) => {
 };
 
 // execute
-const execute = async (dao) => {        
+const execute = async (sqlTransaction) => {        
     switch (dbEngine) {
         case "pg":
             const clientPg = await poolPg.connect();
@@ -49,9 +47,9 @@ const execute = async (dao) => {
             try {
                 await clientPg.query('BEGIN');
 
-                for await (let comandoSql of dao.comandosSql) {
-                    comandoSql.tratarParametrosPg();
-                    await clientPg.query(comandoSql.query, comandoSql.parametros);                                
+                for await (let sqlCommand of sqlTransaction.sqlCommands) {
+                    sqlCommand.handlePgParameters();
+                    await clientPg.query(sqlCommand.query, sqlCommand.parameters);                                
                 }        
                 
                 await clientPg.query('COMMIT');
@@ -67,9 +65,9 @@ const execute = async (dao) => {
             try {           
                 const sqls = [];
                 
-                for (let comandoSql of dao.comandosSql) {
-                    comandoSql.tratarParametrosAdo();                    
-                    sqls.push(comandoSql.query);
+                for (let sqlCommand of sqlTransaction.sqlCommands) {
+                    sqlCommand.handleAdoParameters();                    
+                    sqls.push(sqlCommand.query);
                 }
                                 
                 await clientAdo.executeTrans(sqls);
