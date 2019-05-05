@@ -9,42 +9,46 @@ class SqlCommand {
         this.parameters = parameters || [];
     }
 
-    createQuery(query, sqlFilters) {        
+    createQuery(query, sqlFilters) {
         let clauses = "";
         let count = 0;
 
-        for (let sqlFilter of sqlFilters) {
-            if (count == 0) {
-                clauses += " where ";
-            } else {
-                clauses += " and ";
+        if (_.isArray(sqlFilters)) {
+            for (let sqlFilter of sqlFilters) {
+                if (count === 0) {
+                    clauses += " where ";
+                } else {
+                    clauses += " and ";
+                }
+
+                clauses += `${sqlFilter.column} ${sqlFilter.operator} ? `;
+                count++;
+
+                this.addParameter(sqlFilter.value);
             }
-
-            clauses += `${sqlFilter.column} ${sqlFilter.operator} ? `;
-            count++;
-
-            this.adicionarParametro(filtro.valor);
-        }         
+        }
 
         this.query = query.replace("$clauses", clauses);
     }
 
     addParameter(parameter) {
         if (_.isDate(parameter)) {
-            throw new Error("Favor utilizar as funções específicas de data para parametros do tipo data");
+            throw new Error(
+                "Favor utilizar as funções específicas de data para parametros do tipo data"
+            );
         }
 
         this.parameters.push(parameter);
     }
-    
+
     _addParameterDateByFormat(parameter, format) {
         if (parameter === null) {
             return this.parameters.push(parameter);
-        } 
-                
+        }
+
         if (!_.isDate(parameter)) {
             throw new Error(`O parametro ${parameter} não é uma data válida`);
-        } 
+        }
 
         let dateTimeFormated = moment(parameter).format(format);
         switch (dbEngine) {
@@ -53,14 +57,14 @@ class SqlCommand {
                     return this.parameters.push(dateTimeFormated);
                 } else {
                     return this.parameters.push(parameter);
-                }                
-            
-            case "ado":                                
+                }
+
+            case "ado":
                 return this.parameters.push(`#${dateTimeFormated}#`);
         }
-    }    
+    }
 
-    addParameterData(parameter) {        
+    addParameterDate(parameter) {
         this._addParameterDateByFormat(parameter, "YYYY-MM-DD");
     }
 
@@ -70,7 +74,7 @@ class SqlCommand {
 
     addParameterDateTime(parameter) {
         this._addParameterDateByFormat(parameter, "YYYY-MM-DD HH:mm:ss");
-    }    
+    }
 
     handlePgParameters() {
         let count = 0;
@@ -80,7 +84,7 @@ class SqlCommand {
             return `$${count}`;
         });
     }
-    
+
     handleAdoParameters() {
         for (let parameter of this.parameters) {
             if (_.isString(parameter)) {
@@ -94,17 +98,17 @@ class SqlCommand {
             } else if (_.isNull(parameter)) {
                 this.query = this.query.replace("?", "null");
             }
-        }        
+        }
     }
 
     executeQuery() {
         return db.query(this);
-    }            
+    }
 
     async findOne() {
         const results = await this.executeQuery();
         return results[0];
-    };
+    }
 }
 
 module.exports = SqlCommand;

@@ -1,16 +1,16 @@
 {
-  "name": "db-framework",
-  "version": "1.0.10",
-  "description": "Database framework",
-  "main": "index.js",
-  "scripts": {},
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "arch": "^2.1.1",
-    "debug": "^4.1.1",
-    "lodash": "^4.17.11",
-    "moment": "^2.24.0",
-    "pg": "^7.8.2"
-  }
+    "name": "db-framework",
+    "version": "1.0.15",
+    "description": "Database framework",
+    "main": "index.js",
+    "scripts": {},
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "arch": "^2.1.1",
+        "debug": "^4.1.1",
+        "lodash": "^4.17.11",
+        "moment": "^2.24.0",
+        "pg": "^7.8.2"
+    }
 }
