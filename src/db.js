@@ -16,16 +16,23 @@ switch (dbEngine) {
         });
         break;
     case "ado":
-        clientAdo = adodb.open(`Provider=Microsoft.Jet.OLEDB.4.0;Data Source=${process.env.DB_NAME};Jet OLEDB:Database Password=${process.env.DB_PASSWORD};`);
-        break;    
+        clientAdo = adodb.open(
+            `Provider=Microsoft.Jet.OLEDB.4.0;Data Source=${
+                process.env.DB_NAME
+            };Jet OLEDB:Database Password=${process.env.DB_PASSWORD};`
+        );
+        break;
 }
 
-const query = async (sqlCommand) => {
-    try {        
+const query = async sqlCommand => {
+    try {
         switch (dbEngine) {
             case "pg":
                 sqlCommand.handlePgParameters();
-                let { rows } = await poolPg.query(sqlCommand.query, sqlCommand.parameters);
+                let { rows } = await poolPg.query(
+                    sqlCommand.query,
+                    sqlCommand.parameters
+                );
                 return rows;
 
             case "ado":
@@ -38,47 +45,49 @@ const query = async (sqlCommand) => {
     }
 };
 
-// execute
-const execute = async (sqlTransaction) => {        
+const execute = async sqlTransaction => {
     switch (dbEngine) {
         case "pg":
             const clientPg = await poolPg.connect();
 
             try {
-                await clientPg.query('BEGIN');
+                await clientPg.query("BEGIN");
 
                 for await (let sqlCommand of sqlTransaction.sqlCommands) {
                     sqlCommand.handlePgParameters();
-                    await clientPg.query(sqlCommand.query, sqlCommand.parameters);                                
-                }        
-                
-                await clientPg.query('COMMIT');
+                    await clientPg.query(
+                        sqlCommand.query,
+                        sqlCommand.parameters
+                    );
+                }
+
+                await clientPg.query("COMMIT");
                 return;
             } catch (err) {
-                await clientPg.query('ROLLBACK');
+                await clientPg.query("ROLLBACK");
                 throw err;
-            } finally {        
-                clientPg.release();          
+            } finally {
+                clientPg.release();
             }
-                        
-        case "ado":            
-            try {           
+
+        case "ado":
+            try {
                 const sqls = [];
-                
+
                 for (let sqlCommand of sqlTransaction.sqlCommands) {
-                    sqlCommand.handleAdoParameters();                    
+                    sqlCommand.handleAdoParameters();
                     sqls.push(sqlCommand.query);
                 }
-                                
+
                 await clientAdo.executeTrans(sqls);
                 return;
-            } catch (err) {                
+            } catch (err) {
                 throw err;
             }
-    }            
+    }
 };
 
-module.exports = {    
+module.exports = {
     query,
-    execute    
+    execute
 };

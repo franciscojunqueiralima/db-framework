@@ -1,6 +1,9 @@
 const _ = require("lodash");
 const moment = require("moment");
+
 const db = require("./db");
+const SqlFilter = require("./SqlFilter.js");
+
 const dbEngine = process.env.DB_ENGINE;
 
 class SqlCommand {
@@ -29,6 +32,89 @@ class SqlCommand {
         }
 
         this.query = query.replace("$clauses", clauses);
+    }
+
+    createQueryByRequestQuery(
+        requestQuery,
+        defaultFields,
+        sqlFrom,
+        defautSqlFilters,
+        defaultSort,
+        defaultLimit,
+        defaultOffset
+    ) {
+        // Handle request query object
+        if (requestQuery) {
+            // Handle fields
+            if (requestQuery["fields"]) {
+                defaultFields = requestQuery["fields"];
+            }
+
+            // Handle filters
+            const sqlFilters = SqlFilter.getSqlFiltersByRequestQuery(
+                requestQuery
+            );
+
+            if (sqlFilters.length > 0) {
+                defautSqlFilters = sqlFilters;
+            }
+
+            // Handle sort
+            if (requestQuery["sort"]) {
+                defaultSort = "";
+                for (let sortParam of requestQuery["sort"].split(",")) {
+                    sortParam = sortParam.trim();
+
+                    if (defaultSort !== "") {
+                        defaultSort += ", ";
+                    }
+
+                    if (sortParam.startsWith("-")) {
+                        sortParam = `${sortParam.replace("-", "")} desc`;
+                    }
+
+                    defaultSort += sortParam;
+                }
+            }
+
+            // Handle limit
+            if (requestQuery["limit"]) {
+                defaultLimit = requestQuery["limit"];
+            }
+
+            // Handle offset
+            if (requestQuery["offset"]) {
+                defaultOffset = requestQuery["offset"];
+            }
+        }
+
+        // Query creation
+        let query = "select";
+
+        // Ado top
+        if (defaultLimit && process.env.DB_ENGINE === "ado") {
+            query += ` top ${defaultLimit}`;
+        }
+
+        // Query from
+        query += ` ${defaultFields} from ${sqlFrom} $clauses`;
+
+        // Query order by
+        if (defaultSort) {
+            query += ` order by ${defaultSort}`;
+        }
+
+        // Pg limit
+        if (defaultLimit && process.env.DB_ENGINE === "pg") {
+            query += ` limit ${defaultLimit}`;
+        }
+
+        // Pg offset
+        if (defaultOffset && process.env.DB_ENGINE === "pg") {
+            query += ` offset ${defaultOffset}`;
+        }
+
+        this.createQuery(query, defautSqlFilters);
     }
 
     addParameter(parameter) {
