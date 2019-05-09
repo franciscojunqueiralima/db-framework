@@ -27,7 +27,17 @@ class SqlCommand {
                 clauses += `${sqlFilter.column} ${sqlFilter.operator} ? `;
                 count++;
 
-                this.addParameter(sqlFilter.value);
+                if (_.isDate(sqlFilter.value)) {
+                    if (
+                        sqlFilter.value.getHours() === 0 &&
+                        sqlFilter.value.getMinutes() === 0 &&
+                        sqlFilter.value.getSeconds() === 0
+                    ) {
+                        this.addParameterDate(sqlFilter.value);
+                    } else {
+                        this.addParameterDateTime(sqlFilter.value);
+                    }
+                }
             }
         }
 

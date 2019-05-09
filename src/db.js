@@ -24,7 +24,7 @@ switch (dbEngine) {
         break;
 }
 
-const query = async sqlCommand => {
+const query = async (sqlCommand) => {
     try {
         switch (dbEngine) {
             case "pg":
@@ -45,7 +45,7 @@ const query = async sqlCommand => {
     }
 };
 
-const execute = async sqlTransaction => {
+const execute = async (sqlTransaction) => {
     switch (dbEngine) {
         case "pg":
             const clientPg = await poolPg.connect();

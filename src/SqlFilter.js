@@ -15,9 +15,26 @@ class SqlFilter {
             let sqlFilter;
 
             switch (operator) {
+                // Generic operators
                 case "equals":
                     sqlFilter = new SqlFilter(column, "", value, "=");
                     break;
+                case "notequals":
+                    sqlFilter = new SqlFilter(column, "", value, "<>");
+                    break;
+                case "gt":
+                    sqlFilter = new SqlFilter(column, "", value, ">");
+                    break;
+                case "lt":
+                    sqlFilter = new SqlFilter(column, "", value, "<");
+                    break;
+                case "gte":
+                    sqlFilter = new SqlFilter(column, "", value, ">=");
+                    break;
+                case "lte":
+                    sqlFilter = new SqlFilter(column, "", value, "<=");
+                    break;
+                // Operators for strings
                 case "startswith":
                     sqlFilter = new SqlFilter(column, "", `${value}%`, "like");
                     break;
@@ -39,31 +56,3 @@ class SqlFilter {
 }
 
 module.exports = SqlFilter;
-
-/*
-- String Operators
-    equals
-    startswith
-    endswith
-    contains
-- Number operators
-    equals
-    notequals
-    gt
-    lt
-    gte
-    lte
-- Boolean operator
-    equals
-- Time, Date, and Time Stamp operators
-    after
-    before
-    between
-- Additional Date and Time Stamp operators
-    year
-    month
-    day
-- Stage ID operators
-    equals
-    notequals
-*/
