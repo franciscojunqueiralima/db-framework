@@ -37,6 +37,8 @@ class SqlCommand {
                     } else {
                         this.addParameterDateTime(sqlFilter.value);
                     }
+                } else {
+                    this.addParameter(sqlFilter.value);
                 }
             }
         }
