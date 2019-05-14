@@ -14,13 +14,45 @@ class SqlFilter {
             let value = requestQuery[param];
             let sqlFilter;
 
+            // Check for converts in string value
+            if (operator.includes("-")) {
+                let [type, innerOperator] = operator.split("-");
+                switch (type) {
+                    case "str":
+                        value = String(value);
+                        break;
+                    case "num":
+                        value = Number(value);
+                        break;
+                    case "dat":
+                        let stringDate = String(value);
+                        value = new Date(
+                            Number(stringDate.substring(0, 4)),
+                            Number(stringDate.substring(5, 7)),
+                            Number(stringDate.substring(8, 10))
+                        );
+
+                        break;
+                }
+
+                operator = innerOperator;
+            }
+
             switch (operator) {
-                // Generic operators
                 case "equals":
                     sqlFilter = new SqlFilter(column, "", value, "=");
                     break;
                 case "notequals":
                     sqlFilter = new SqlFilter(column, "", value, "<>");
+                    break;
+                case "startswith":
+                    sqlFilter = new SqlFilter(column, "", `${value}%`, "like");
+                    break;
+                case "endswith":
+                    sqlFilter = new SqlFilter(column, "", `%${value}`, "like");
+                    break;
+                case "contains":
+                    sqlFilter = new SqlFilter(column, "", `%${value}%`, "like");
                     break;
                 case "gt":
                     sqlFilter = new SqlFilter(column, "", value, ">");
@@ -33,16 +65,6 @@ class SqlFilter {
                     break;
                 case "lte":
                     sqlFilter = new SqlFilter(column, "", value, "<=");
-                    break;
-                // Operators for strings
-                case "startswith":
-                    sqlFilter = new SqlFilter(column, "", `${value}%`, "like");
-                    break;
-                case "endswith":
-                    sqlFilter = new SqlFilter(column, "", `%${value}`, "like");
-                    break;
-                case "contains":
-                    sqlFilter = new SqlFilter(column, "", `%${value}%`, "like");
                     break;
                 default:
                     continue;
