@@ -10,17 +10,17 @@ class SqlFilter {
         const sqlFilters = [];
 
         for (let param in requestQuery) {
-            let [column, operator] = param.split("__");
+            if (!param.includes("__")) {
+                continue;
+            }
+
+            let [column, operator, type] = param.split("__");
             let value = requestQuery[param];
             let sqlFilter;
 
-            // Check for converts in string value
-            if (operator.includes("-")) {
-                let [type, innerOperator] = operator.split("-");
+            // Check for type convertion
+            if (type) {
                 switch (type) {
-                    case "str":
-                        value = String(value);
-                        break;
                     case "num":
                         value = Number(value);
                         break;
@@ -34,8 +34,6 @@ class SqlFilter {
 
                         break;
                 }
-
-                operator = innerOperator;
             }
 
             switch (operator) {
