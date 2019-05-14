@@ -1,6 +1,6 @@
 {
     "name": "db-framework",
-    "version": "1.0.18",
+    "version": "1.0.19",
     "description": "A node.js implementation to run SQL statments.",
     "license": "ISC",
     "main": "index.js",
