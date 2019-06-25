@@ -4,8 +4,6 @@ const moment = require("moment");
 const db = require("./db");
 const SqlFilter = require("./SqlFilter.js");
 
-const dbEngine = process.env.DB_ENGINE;
-
 class SqlCommand {
     constructor(query, parameters) {
         this.query = query || "";
@@ -46,11 +44,47 @@ class SqlCommand {
         this.query = query.replace("$clauses", clauses);
     }
 
+    createPatchQuery(table, data, where) {
+        // Handle table
+        this.query = `update ${table} set `;
+
+        // Handle data
+        let first = true;
+        Object.keys(data).forEach((key) => {
+            if (first) {
+                first = false;
+            } else {
+                this.query += ", ";
+            }
+
+            let [column, type] = key.split("__");
+
+            this.query += `${column} = ?`;
+            this.addParameterWithType(data[key], type);
+        });
+
+        // Handle where
+        first = true;
+        Object.keys(where).forEach((key) => {
+            if (first) {
+                first = false;
+                this.query += " where ";
+            } else {
+                this.query += " and ";
+            }
+
+            let [column, type] = key.split("__");
+
+            this.query += `${column} = ?`;
+            this.addParameterWithType(where[key], type);
+        });
+    }
+
     createQueryByRequestQuery(
         requestQuery,
         defaultFields,
-        sqlFrom,
-        defautSqlFilters,
+        defaultSqlFrom,
+        defaultSqlFilters,
         defaultSort,
         defaultLimit,
         defaultOffset
@@ -62,13 +96,24 @@ class SqlCommand {
                 defaultFields = requestQuery["fields"];
             }
 
+            //Handle sql from
+            if (requestQuery["sqlFrom"]) {
+                defaultSqlFrom = requestQuery["sqlFrom"];
+            }
+
             // Handle filters
             const sqlFilters = SqlFilter.getSqlFiltersByRequestQuery(
                 requestQuery
             );
 
             if (sqlFilters.length > 0) {
-                defautSqlFilters = sqlFilters;
+                if (_.isArray(defaultSqlFilters)) {
+                    for (let sqlFilter of sqlFilters) {
+                        defaultSqlFilters.push(sqlFilter);
+                    }
+                } else {
+                    defaultSqlFilters = sqlFilters;
+                }
             }
 
             // Handle sort
@@ -109,7 +154,7 @@ class SqlCommand {
         }
 
         // Query from
-        query += ` ${defaultFields} from ${sqlFrom} $clauses`;
+        query += ` ${defaultFields} from ${defaultSqlFrom} $clauses`;
 
         // Query order by
         if (defaultSort) {
@@ -126,7 +171,7 @@ class SqlCommand {
             query += ` offset ${defaultOffset}`;
         }
 
-        this.createQuery(query, defautSqlFilters);
+        this.createQuery(query, defaultSqlFilters);
     }
 
     addParameter(parameter) {
@@ -139,6 +184,30 @@ class SqlCommand {
         this.parameters.push(parameter);
     }
 
+    addParameterWithType(parameter, type) {
+        switch (type) {
+            case "date":
+            case "datetime":
+            case "time":
+                let date = new Date(parameter);
+                if (parameter === null) {
+                    date = null;
+                }
+
+                if (type === "date") {
+                    this.addParameterDate(date);
+                } else if (type === "datetime") {
+                    this.addParameterDateTime(date);
+                } else if (type === "time") {
+                    this.addParameterTime(date);
+                }
+                break;
+            default:
+                this.addParameter(parameter);
+                break;
+        }
+    }
+
     _addParameterDateByFormat(parameter, format) {
         if (parameter === null) {
             return this.parameters.push(parameter);
@@ -149,7 +218,7 @@ class SqlCommand {
         }
 
         let dateTimeFormated = moment(parameter).format(format);
-        switch (dbEngine) {
+        switch (process.env.DB_ENGINE) {
             case "pg":
                 if (format === "HH:mm:ss") {
                     return this.parameters.push(dateTimeFormated);

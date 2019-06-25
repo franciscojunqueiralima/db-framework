@@ -1,32 +1,33 @@
 const { Pool } = require("pg");
 const adodb = require("./ado/index.js");
 
-const dbEngine = process.env.DB_ENGINE;
 let poolPg;
 let clientAdo;
 
-switch (dbEngine) {
-    case "pg":
-        poolPg = new Pool({
-            user: process.env.DB_USER,
-            host: process.env.DB_HOST,
-            database: process.env.DB_NAME,
-            password: process.env.DB_PASSWORD,
-            port: process.env.DB_PORT
-        });
-        break;
-    case "ado":
-        clientAdo = adodb.open(
-            `Provider=Microsoft.Jet.OLEDB.4.0;Data Source=${
-                process.env.DB_NAME
-            };Jet OLEDB:Database Password=${process.env.DB_PASSWORD};`
-        );
-        break;
-}
+const atualizarVariaveisDb = () => {
+    switch (process.env.DB_ENGINE) {
+        case "pg":
+            poolPg = new Pool({
+                user: process.env.DB_USER,
+                host: process.env.DB_HOST,
+                database: process.env.DB_NAME,
+                password: process.env.DB_PASSWORD,
+                port: process.env.DB_PORT
+            });
+            break;
+        case "ado":
+            clientAdo = adodb.open(
+                `Provider=Microsoft.Jet.OLEDB.4.0;Data Source=${
+                    process.env.DB_NAME
+                };Jet OLEDB:Database Password=${process.env.DB_PASSWORD};`
+            );
+            break;
+    }
+};
 
 const query = async (sqlCommand) => {
     try {
-        switch (dbEngine) {
+        switch (process.env.DB_ENGINE) {
             case "pg":
                 sqlCommand.handlePgParameters();
                 let { rows } = await poolPg.query(
@@ -46,7 +47,7 @@ const query = async (sqlCommand) => {
 };
 
 const execute = async (sqlTransaction) => {
-    switch (dbEngine) {
+    switch (process.env.DB_ENGINE) {
         case "pg":
             const clientPg = await poolPg.connect();
 
@@ -87,7 +88,10 @@ const execute = async (sqlTransaction) => {
     }
 };
 
+atualizarVariaveisDb();
+
 module.exports = {
+    atualizarVariaveisDb,
     query,
     execute
 };

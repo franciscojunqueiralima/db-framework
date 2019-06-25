@@ -21,10 +21,10 @@ class SqlFilter {
             // Check for type convertion
             if (type) {
                 switch (type) {
-                    case "num":
+                    case "number":
                         value = Number(value);
                         break;
-                    case "dat":
+                    case "date":
                         let stringDate = String(value);
                         value = new Date(
                             Number(stringDate.substring(0, 4)),
