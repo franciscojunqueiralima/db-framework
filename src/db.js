@@ -4,7 +4,7 @@ const adodb = require("./ado/index.js");
 let poolPg;
 let clientAdo;
 
-const atualizarVariaveisDb = () => {
+const updateDbVariables = () => {
     switch (process.env.DB_ENGINE) {
         case "pg":
             poolPg = new Pool({
@@ -29,6 +29,10 @@ const query = async (sqlCommand) => {
     try {
         switch (process.env.DB_ENGINE) {
             case "pg":
+                if (process.env.DB_AUTO_ALIAS === true) {
+                    sqlCommand.handleAutoAliasFields();
+                }
+
                 sqlCommand.handlePgParameters();
                 let { rows } = await poolPg.query(
                     sqlCommand.query,
@@ -88,10 +92,10 @@ const execute = async (sqlTransaction) => {
     }
 };
 
-atualizarVariaveisDb();
+updateDbVariables();
 
 module.exports = {
-    atualizarVariaveisDb,
+    updateDbVariables,
     query,
     execute
 };

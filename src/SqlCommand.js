@@ -243,6 +243,44 @@ class SqlCommand {
         this._addParameterDateByFormat(parameter, "YYYY-MM-DD HH:mm:ss");
     }
 
+    handleAutoAliasFields() {
+        let matches = this.query.match(/select (.*?) from/gi);
+        if (!matches) {
+            return;
+        }
+
+        for (let match of matches) {
+            let columns = match
+                .replace(/select/gi, "")
+                .replace(/from/gi, "")
+                .trim();
+
+            let newQuery = "";
+            for (let column of columns.split(",")) {
+                column = column.trim();
+
+                if (newQuery !== "") {
+                    newQuery += ", ";
+                }
+
+                if (column.toLowerCase().includes(" as ")) {
+                    let lastChar = column[column.length - 1];
+                    if (lastChar === '"') {
+                        newQuery += column;
+                    } else {
+                        column = `${column.replace(" as ", ' as "')}"`;
+                        newQuery += column;
+                    }
+                } else {
+                    newQuery += `${column} as "${column}"`;
+                }
+            }
+
+            newQuery = `select ${newQuery} from`;
+            this.query = this.query.replace(match, newQuery);
+        }
+    }
+
     handlePgParameters() {
         let count = 0;
 
