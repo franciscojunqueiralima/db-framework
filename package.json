@@ -1,6 +1,6 @@
 {
     "name": "db-framework",
-    "version": "1.0.27",
+    "version": "1.0.28",
     "description": "A node.js implementation to run SQL statments.",
     "license": "ISC",
     "main": "index.js",
@@ -14,8 +14,8 @@
     "dependencies": {
         "arch": "^2.1.1",
         "debug": "^4.1.1",
-        "lodash": "^4.17.11",
+        "lodash": "^4.17.15",
         "moment": "^2.24.0",
-        "pg": "^7.8.2"
+        "pg": "^7.12.0"
     }
 }
