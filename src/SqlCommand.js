@@ -22,22 +22,34 @@ class SqlCommand {
                     clauses += " and ";
                 }
 
-                clauses += `${sqlFilter.column} ${sqlFilter.operator} ? `;
-                count++;
+                clauses += `${sqlFilter.column} ${sqlFilter.getOperator()} `;
+                
+                if (this.isOperatorIn(sqlFilter.operator)) {
+                    clauses += "(";
+                    for (let i = 0; i < sqlFilter.value.split(',').length; i++) {
+                        if (i !== 0) {
+                            clauses += ",";
+                        }
+                        clauses += "?";
+                    }
+                    clauses += ")";
+                } else {
+                    clauses += " ?";
+                }                
 
                 if (_.isDate(sqlFilter.value)) {
-                    if (
-                        sqlFilter.value.getHours() === 0 &&
+                    if (sqlFilter.value.getHours() === 0 &&
                         sqlFilter.value.getMinutes() === 0 &&
-                        sqlFilter.value.getSeconds() === 0
-                    ) {
+                        sqlFilter.value.getSeconds() === 0) {
                         this.addParameterDate(sqlFilter.value);
                     } else {
                         this.addParameterDateTime(sqlFilter.value);
                     }
                 } else {
-                    this.addParameter(sqlFilter.value);
+                    this.addParameter(sqlFilter.value, sqlFilter.operator);
                 }
+
+                count++;
             }
         }
 
@@ -80,68 +92,51 @@ class SqlCommand {
         });
     }
 
-    createQueryByRequestQuery(
-        requestQuery,
-        defaultFields,
-        defaultSqlFrom,
-        defaultSqlFilters,
-        defaultSort,
-        defaultLimit,
-        defaultOffset
-    ) {
+    createQueryByRequestQuery(requestQuery, fields, sqlFrom, sqlFilters, sort, limit, offset) {
         // Handle request query object
         if (requestQuery) {
             // Handle fields
             if (requestQuery["fields"]) {
-                defaultFields = requestQuery["fields"];
+                fields = requestQuery["fields"];
             }
 
             //Handle sql from
             if (requestQuery["sqlFrom"]) {
-                defaultSqlFrom = requestQuery["sqlFrom"];
+                sqlFrom = requestQuery["sqlFrom"];
             }
 
             // Handle filters
-            const sqlFilters = SqlFilter.getSqlFiltersByRequestQuery(
-                requestQuery
-            );
-
-            if (sqlFilters.length > 0) {
-                if (_.isArray(defaultSqlFilters)) {
-                    for (let sqlFilter of sqlFilters) {
-                        defaultSqlFilters.push(sqlFilter);
-                    }
-                } else {
-                    defaultSqlFilters = sqlFilters;
-                }
+            const handledSqlFilters = SqlFilter.getSqlFiltersByRequestQuery(requestQuery);
+            if (handledSqlFilters) {
+                sqlFilters = handledSqlFilters;
             }
 
             // Handle sort
             if (requestQuery["sort"]) {
-                defaultSort = "";
+                sort = "";
                 for (let sortParam of requestQuery["sort"].split(",")) {
                     sortParam = sortParam.trim();
 
-                    if (defaultSort !== "") {
-                        defaultSort += ", ";
+                    if (sort !== "") {
+                        sort += ", ";
                     }
 
                     if (sortParam.startsWith("-")) {
                         sortParam = `${sortParam.replace("-", "")} desc`;
                     }
 
-                    defaultSort += sortParam;
+                    sort += sortParam;
                 }
             }
 
             // Handle limit
             if (requestQuery["limit"]) {
-                defaultLimit = requestQuery["limit"];
+                limit = requestQuery["limit"];
             }
 
             // Handle offset
             if (requestQuery["offset"]) {
-                defaultOffset = requestQuery["offset"];
+                offset = requestQuery["offset"];
             }
         }
 
@@ -149,39 +144,44 @@ class SqlCommand {
         let query = "select";
 
         // Ado top
-        if (defaultLimit && process.env.DB_ENGINE === "ado") {
-            query += ` top ${defaultLimit}`;
+        if (limit && process.env.DB_ENGINE === "ado") {
+            query += ` top ${limit}`;
         }
 
         // Query from
-        query += ` ${defaultFields} from ${defaultSqlFrom} $clauses`;
+        query += ` ${fields} from ${sqlFrom} $clauses`;
 
         // Query order by
-        if (defaultSort) {
-            query += ` order by ${defaultSort}`;
+        if (sort) {
+            query += ` order by ${sort}`;
         }
 
         // Pg limit
-        if (defaultLimit && process.env.DB_ENGINE === "pg") {
-            query += ` limit ${defaultLimit}`;
+        if (limit && process.env.DB_ENGINE === "pg") {
+            query += ` limit ${limit}`;
         }
 
         // Pg offset
-        if (defaultOffset && process.env.DB_ENGINE === "pg") {
-            query += ` offset ${defaultOffset}`;
+        if (offset && process.env.DB_ENGINE === "pg") {
+            query += ` offset ${offset}`;
         }
 
-        this.createQuery(query, defaultSqlFilters);
+        this.createQuery(query, sqlFilters);
     }
 
-    addParameter(parameter) {
+    addParameter(parameter, operator) {
         if (_.isDate(parameter)) {
-            throw new Error(
-                "Favor utilizar as funções específicas de data para parametros do tipo data"
-            );
+            throw new Error("Favor utilizar as funções específicas de data para parametros do tipo data");
         }
 
-        this.parameters.push(parameter);
+        if (this.isOperatorIn(operator)) {
+            let parameterList = parameter.split(',');
+            for (let i = 0; i < parameterList.length; i++) {
+                this.parameters.push(parameterList[i].trim());
+            }
+        } else {
+            this.parameters.push(parameter);   
+        }        
     }
 
     addParameterWithType(parameter, type) {
@@ -313,6 +313,10 @@ class SqlCommand {
     async findOne() {
         const results = await this.executeQuery();
         return results[0];
+    }
+
+    isOperatorIn(operator) {
+        return ["in", "notin"].includes(operator);
     }
 }
 

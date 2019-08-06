@@ -80,7 +80,7 @@ const execute = async (sqlTransaction) => {
                 }
 
                 await clientPg.query("COMMIT");
-                return;
+                return result;
             } catch (err) {
                 await clientPg.query("ROLLBACK");
 

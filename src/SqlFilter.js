@@ -6,6 +6,14 @@ class SqlFilter {
         this.operator = operator;
     }
 
+    getOperator() {
+        if (this.operator === "notin") {
+            return "not in";
+        }
+
+        return this.operator;
+    }
+    
     static getSqlFiltersByRequestQuery(requestQuery) {
         const sqlFilters = [];
 
@@ -63,6 +71,12 @@ class SqlFilter {
                     break;
                 case "lte":
                     sqlFilter = new SqlFilter(column, "", value, "<=");
+                    break;
+                case "in":
+                    sqlFilter = new SqlFilter(column, "", value, "in");
+                    break;
+                case "notin":
+                    sqlFilter = new SqlFilter(column, "", value, "notin");
                     break;
                 default:
                     continue;
