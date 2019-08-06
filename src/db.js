@@ -29,7 +29,7 @@ const query = async (sqlCommand) => {
     try {
         switch (process.env.DB_ENGINE) {
             case "pg":
-                if (process.env.DB_AUTO_ALIAS === true) {
+                if (process.env.DB_AUTO_ALIAS) {
                     sqlCommand.handleAutoAliasFields();
                 }
 
@@ -46,11 +46,19 @@ const query = async (sqlCommand) => {
                 return data;
         }
     } catch (err) {
+        if (sqlCommand) {
+            console.log("Query: ", sqlCommand.query);
+            console.log("Parameters: ", sqlCommand.parameters);
+        }
+
         throw err;
     }
 };
 
 const execute = async (sqlTransaction) => {
+    let currentSqlCommand;
+    let result = [];
+
     switch (process.env.DB_ENGINE) {
         case "pg":
             const clientPg = await poolPg.connect();
@@ -60,16 +68,27 @@ const execute = async (sqlTransaction) => {
 
                 for await (let sqlCommand of sqlTransaction.sqlCommands) {
                     sqlCommand.handlePgParameters();
-                    await clientPg.query(
+                    currentSqlCommand = sqlCommand;
+                    let { rows } = await clientPg.query(
                         sqlCommand.query,
                         sqlCommand.parameters
                     );
+
+                    if (sqlCommand.query.startsWith("select")) {
+                        result.push(rows);
+                    }
                 }
 
                 await clientPg.query("COMMIT");
                 return;
             } catch (err) {
                 await clientPg.query("ROLLBACK");
+
+                if (currentSqlCommand) {
+                    console.log("Query: ", currentSqlCommand.query);
+                    console.log("Parameters: ", currentSqlCommand.parameters);
+                }
+
                 throw err;
             } finally {
                 clientPg.release();
@@ -80,7 +99,7 @@ const execute = async (sqlTransaction) => {
                 const sqls = [];
 
                 for (let sqlCommand of sqlTransaction.sqlCommands) {
-                    sqlCommand.handleAdoParameters();
+                    sqlCommand.handleAdoParameters();                    
                     sqls.push(sqlCommand.query);
                 }
 
