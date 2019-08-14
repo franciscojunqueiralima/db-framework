@@ -1,7 +1,7 @@
-const db = require("./src/db.js");
-const SqlTransaction = require("./src/SqlTransaction.js");
-const SqlCommand = require("./src/SqlCommand.js");
-const SqlFilter = require("./src/SqlFilter.js");
+const db = require("./lib/db.js");
+const SqlTransaction = require("./lib/SqlTransaction.js");
+const SqlCommand = require("./lib/SqlCommand.js");
+const SqlFilter = require("./lib/SqlFilter.js");
 
 module.exports = { 
     ...db,
