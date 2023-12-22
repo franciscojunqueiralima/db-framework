@@ -1,0 +1,22 @@
+{
+    "name": "db-framework",
+    "version": "1.0.40",
+    "description": "A node.js implementation to run SQL statments.",
+    "license": "ISC",
+    "main": "index.js",
+    "scripts": {},
+    "author": "Francisco Lima <franciscojunqueiralima@gmail.com>",
+    "homepage": "https://github.com/franciscojunqueiralima/db-framework",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/franciscojunqueiralima/db-framework"
+    },
+    "dependencies": {
+        "arch": "^2.2.0",
+        "debug": "^4.3.4",
+        "lodash": "^4.17.21",
+        "moment": "^2.29.4",
+        "pg": "^8.11.3",
+        "pg-pool": "^3.6.1"
+    }
+}
